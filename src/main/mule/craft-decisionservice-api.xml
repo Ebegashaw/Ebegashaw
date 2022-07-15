@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    <http:listener-config name="craft-decisionservice-api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="craft-decisionservice-api-config" api="craft-decisionservice-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="5db5141d-b445-4aba-82bc-2c255e69df81" >
+		<http:request-connection host="corona-api.com" />
+	</http:request-config>
+	<flow name="craft-decisionservice-api-main">
+        <http:listener config-ref="craft-decisionservice-api-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="craft-decisionservice-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="craft-decisionservice-api-console">
+        <http:listener config-ref="craft-decisionservice-api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="craft-decisionservice-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\decisionService:craft-decisionservice-api-config">
+		<logger level="INFO" doc:name="Entry" doc:id="d0b0099f-e371-4b68-86d0-3adb57e66e8c" />
+		<http:request method="GET" doc:name="Call Covid-19Tracking Api" doc:id="bb56b941-f622-4bfe-b92a-60505952d365" config-ref="HTTP_Request_configuration" path="/countries" />
+		<ee:transform doc:name="Extract Covid Data" doc:id="67045226-9fe8-4d27-8080-fe8484d2c7a0">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+import * from dw::core::Arrays
+output application/json
+
+---
+slice(payload.data map {
+	latitude: $.coordinates.latitude,
+	longitude: $.coordinates.longitude,
+	country: $.name,
+	code: $.code,
+	population: $.population,
+	deaths: $.latest_data.deaths,
+	confirmed: $.latest_data.confirmed,
+	recovered: $.latest_data.recovered,
+	critical: $.latest_data.critical
+} orderBy((item,index)-> -item.deaths),0,3)]]></ee:set-payload>
+			</ee:message>
+			<ee:variables />
+		</ee:transform>
+		<set-variable value="#[payload]" doc:name="Store Top 3 Covid Data By Death" doc:id="8817bf23-7c84-47e8-9262-c160f5672735" variableName="covidData" />
+		<scatter-gather doc:name="Scatter-Gather" doc:id="4cce2380-1c83-4824-825b-f102f2d42483" >
+			<route >
+				<flow-ref doc:name="Region WS Flow" doc:id="bcde56d2-80ac-42a4-a7b0-89347f3d4be3" name="regionWebserviceFlow"/>
+			</route>
+			<route >
+				<flow-ref doc:name="Exchange WS Flow" doc:id="75d30fca-ca02-40d3-852f-8f43626409f7" name="exchangeWebserviceFlow"/>
+			</route>
+			<route >
+				<flow-ref doc:name="Weather WS Flow" doc:id="f314c28d-0e86-496a-b0fa-6d7baf4b4972" name="weatherWebserviceFlow"/>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="DS Data" doc:id="bc760689-2c17-4282-92dd-36585f179e36">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+
+vars.covidData map (value, index) -> {
+	countryName: value.country,
+	countryCode: value.code,
+	population: value.population,
+    (vars.regionData filter ($.country == value.country) map (value1) -> {
+      Region : value1..region 
+    }),
+    coivd:{
+    	deaths: value.death,
+    	confirmed: value.confirmed,
+    	recovered: value.recoverd,
+    	critical: value.critical
+    },
+    
+      currency:
+		(vars.exchangeRate mapObject (value2, key, index) -> (
+			if((key) startsWith (value.code)) {
+				(key):value2 
+	}
+			else{
+				
+			})
+	),
+	
+	weather: vars.weatherData filter ($.lat == value.latitude and $.lon == value.longitude)
+	map(value3, index) ->{
+		Temperature: value3.temperature
+	}
+
+//	weather: vars.weatherData
+//	map(value3, index) ->{
+//		Temperature: value3.temperature
+//	}
+	
+ }
+
+ 
+ 
+ 
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+    </flow>
+</mule>

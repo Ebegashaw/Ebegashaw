@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:request-config name="HTTP_Request_configuration3" doc:name="HTTP Request configuration" doc:id="c6cece65-5323-4488-9e55-e038e1e3a1fe" >
+		<http:request-connection host="api.openweathermap.org" />
+	</http:request-config>
+	<flow name="weatherWebserviceFlow" doc:id="feb2481e-83de-4f85-9070-c6eb562f38fc" >
+		<parallel-foreach doc:name="Parallel For Each" doc:id="dc9687da-8da5-466d-8f9f-9019d269af2e" >
+			<http:request method="GET" doc:name="call openWeather Api" doc:id="5b1ba0d8-dc72-4a27-af5b-543d4fb30e24" config-ref="HTTP_Request_configuration3" path="/data/2.5/onecall">
+			<http:query-params><![CDATA[#[output application/java
+---
+{
+	"appid" : "2bde0b8604a631c8c139c86c300ddd49",
+	"lat" : payload.latitude,
+	"lon" : payload.longitude,
+	"exclude" : "current,minutely,hourly,alerts",
+}]]]></http:query-params>
+		</http:request>
+			<ee:transform doc:name="Extract temperature data" doc:id="aa1a72b9-f0b1-45c1-82ac-11f2222c08e2">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	latitude: payload.lat,
+	longitude: payload.lon,
+	temperature: payload.daily.temp
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables />
+		</ee:transform>
+			<ee:transform doc:name="Transform Message" doc:id="fec645a5-6338-4772-8dd3-3f359dc25926">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="weatherData"><![CDATA[%dw 2.0
+output application/json
+---
+
+vars.weatherData.payload]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		</parallel-foreach>
+	</flow>
+</mule>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:request-config name="HTTP_Request_configuration2" doc:name="HTTP Request configuration" doc:id="2dd0dfeb-c3a1-4de4-9709-a4fea9168e5f" >
+		<http:request-connection host="v6.exchangerate-api.com" />
+	</http:request-config>
+	<flow name="exchangeWebserviceFlow" doc:id="17f00bad-72bb-4e4f-ab66-b0a9062aa3e3" >
+		<http:request method="GET" doc:name="call ExchangeRate Api" doc:id="151af12d-1c5f-4774-8afb-54d6adbedff4" config-ref="HTTP_Request_configuration2" path="/v6/1d25203472729a98547670dd/latest/USD" />
+		<ee:transform doc:name="Extract conversion rate" doc:id="d6a15c80-a53d-4115-abe6-b4b7fd955091">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="exchangeRate"><![CDATA[%dw 2.0
+output application/json
+---
+payload.conversion_rates
+]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</flow>
+</mule>
